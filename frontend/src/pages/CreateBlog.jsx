@@ -1,105 +1,61 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from "react";
 
-const CreateBlog = () => {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const navigate = useNavigate()
+const API_URL = import.meta.env.VITE_API_URL;
+
+function CreateBlog() {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    // Basic validation
-    if (!title.trim() || !content.trim()) {
-      setError('Title and content are required')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setError("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs`, {
-        method: 'POST',
+      const res = await fetch(`${API_URL}/api/blogs`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title, content })
-      })
+        body: JSON.stringify({ title, content }),
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to create blog')
+      if (!res.ok) {
+        throw new Error("Failed to create blog");
       }
 
-      // Navigate to home page after successful creation
-      navigate('/')
+      setTitle("");
+      setContent("");
+      alert("Blog created successfully 🎉");
+
     } catch (err) {
-      setError(err.message)
-      setLoading(false)
+      console.error(err);
+      setError("Failed to create blog");
     }
-  }
+  };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Create New Blog Post</h1>
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-        <div className="mb-6">
-          <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
-            Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-            placeholder="Enter blog title..."
-            required
-          />
-        </div>
+      <input
+        type="text"
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
 
-        <div className="mb-6">
-          <label htmlFor="content" className="block text-gray-700 font-medium mb-2">
-            Content *
-          </label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors h-64 resize-none"
-            placeholder="Write your blog content here..."
-            required
-          />
-        </div>
+      <textarea
+        placeholder="Content"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        required
+      />
 
-        <div className="flex space-x-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Creating...' : 'Create Blog'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  )
+      <button type="submit">Create Blog</button>
+    </form>
+  );
 }
 
-export default CreateBlog
+export default CreateBlog;
