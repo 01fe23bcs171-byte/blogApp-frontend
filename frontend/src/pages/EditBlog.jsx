@@ -1,152 +1,61 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const EditBlog = () => {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { id } = useParams()
-  const navigate = useNavigate()
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchBlog()
-  }, [id])
-
-  const fetchBlog = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs/${id}`)
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Blog not found')
-        }
-        throw new Error('Failed to fetch blog')
-      }
-      const data = await response.json()
-      setTitle(data.title)
-      setContent(data.content)
-      setFetchLoading(false)
-    } catch (err) {
-      setError(err.message)
-      setFetchLoading(false)
-    }
-  }
+    fetch(`${API_URL}/api/blogs/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTitle(data.title);
+        setContent(data.content);
+      })
+      .catch(() => setError("Failed to load blog"));
+  }, [id]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    // Basic validation
-    if (!title.trim() || !content.trim()) {
-      setError('Title and content are required')
-      return
-    }
+    e.preventDefault();
 
-    setLoading(true)
-    setError(null)
+    const res = await fetch(`${API_URL}/api/blogs/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, content }),
+    });
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ title, content })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update blog')
-      }
-
-      // Navigate to blog details page after successful update
-      navigate(`/blog/${id}`)
-    } catch (err) {
-      setError(err.message)
-      setLoading(false)
-    }
-  }
-
-  if (fetchLoading) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-600">Loading blog...</p>
-      </div>
-    )
-  }
-
-  if (error && !title && !content) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error: {error}</p>
-        <button
-          onClick={() => navigate('/')}
-          className="text-blue-600 hover:underline mt-4 inline-block"
-        >
-          Back to Home
-        </button>
-      </div>
-    )
-  }
+    if (res.ok) navigate(`/blog/${id}`);
+    else setError("Update failed");
+  };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Edit Blog Post</h1>
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
+    <div className="max-w-xl mx-auto bg-white p-6 rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">Edit Blog</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-        <div className="mb-6">
-          <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
-            Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-            placeholder="Enter blog title..."
-            required
-          />
-        </div>
+      {error && <p className="text-red-600">{error}</p>}
 
-        <div className="mb-6">
-          <label htmlFor="content" className="block text-gray-700 font-medium mb-2">
-            Content *
-          </label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors h-64 resize-none"
-            placeholder="Write your blog content here..."
-            required
-          />
-        </div>
-
-        <div className="flex space-x-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Updating...' : 'Update Blog'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(`/blog/${id}`)}
-            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-        </div>
+      <form onSubmit={handleSubmit}>
+        <input
+          className="w-full border p-2 mb-4"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <textarea
+          className="w-full border p-2 mb-4 h-40"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+        <button className="bg-blue-600 text-white px-6 py-2 rounded">
+          Update
+        </button>
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default EditBlog
+export default EditBlog;

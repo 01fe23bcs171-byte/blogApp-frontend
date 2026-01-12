@@ -1,37 +1,36 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 
-const Home = () => {
-  const [blogs, setBlogs] = useState([])
+const BlogDetails = () => {
+  const [blog, setBlog] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { id } = useParams()
+  const navigate = useNavigate()
 
   useEffect(() => {
-    fetchBlogs()
-  }, [])
+    fetchBlog()
+  }, [id])
 
-  const fetchBlogs = async () => {
+  const fetchBlog = async () => {
     try {
-      const apiUrl = `http://localhost:5000/api/blogs` // Temporary fix
-      console.log('Fetching from:', apiUrl) // Debug line
-      const response = await fetch(apiUrl)
-      console.log('Response status:', response.status) // Debug line
-      console.log('Response headers:', response.headers.get('content-type')) // Debug line
-      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs/${id}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch blogs')
+        if (response.status === 404) {
+          throw new Error('Blog not found')
+        }
+        throw new Error('Failed to fetch blog')
       }
       const data = await response.json()
-      setBlogs(data)
+      setBlog(data)
       setLoading(false)
     } catch (err) {
-      console.error('Fetch error:', err) // Debug line
       setError(err.message)
       setLoading(false)
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this blog?')) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs/${id}`, {
@@ -40,8 +39,8 @@ const Home = () => {
         if (!response.ok) {
           throw new Error('Failed to delete blog')
         }
-        // Refresh blogs after deletion
-        fetchBlogs()
+        // Navigate to home page after successful deletion
+        navigate('/')
       } catch (err) {
         setError(err.message)
       }
@@ -51,7 +50,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600">Loading blogs...</p>
+        <p className="text-gray-600">Loading blog...</p>
       </div>
     )
   }
@@ -60,63 +59,61 @@ const Home = () => {
     return (
       <div className="text-center py-8">
         <p className="text-red-600">Error: {error}</p>
+        <Link to="/" className="text-blue-600 hover:underline mt-4 inline-block">
+          Back to Home
+        </Link>
+      </div>
+    )
+  }
+
+  if (!blog) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Blog not found</p>
+        <Link to="/" className="text-blue-600 hover:underline mt-4 inline-block">
+          Back to Home
+        </Link>
       </div>
     )
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">All Blog Posts</h1>
-      
-      {blogs.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600 text-lg mb-4">No blog posts yet.</p>
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">{blog.title}</h1>
+          <div className="text-sm text-gray-500">
+            Created on: {new Date(blog.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+
+        <div className="blog-content text-gray-700 whitespace-pre-wrap mb-8">
+          {blog.content}
+        </div>
+
+        <div className="flex space-x-4 pt-6 border-t border-gray-200">
           <Link 
-            to="/create" 
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors inline-block"
+            to="/"
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
           >
-            Create First Blog
+            Back to Home
           </Link>
+          <Link 
+            to={`/edit/${blog._id}`}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
+          >
+            Edit Blog
+          </Link>
+          <button
+            onClick={handleDelete}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+          >
+            Delete Blog
+          </button>
         </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {blogs.map((blog) => (
-            <div key={blog._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-3 line-clamp-2">
-                {blog.title}
-              </h2>
-              <p className="text-gray-600 mb-4 line-clamp-3">
-                {blog.content}
-              </p>
-              <div className="text-sm text-gray-500 mb-4">
-                {new Date(blog.createdAt).toLocaleDateString()}
-              </div>
-              <div className="flex space-x-2">
-                <Link 
-                  to={`/blog/${blog._id}`}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Read More
-                </Link>
-                <Link 
-                  to={`/edit/${blog._id}`}
-                  className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors text-sm"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => handleDelete(blog._id)}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors text-sm"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
 
-export default Home
+export default BlogDetails
