@@ -35,7 +35,7 @@ const BlogDetails = () => {
     if (!window.confirm("Are you sure you want to delete this blog?")) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/blogs/${id}`, {
+      const res = awaitfetch(`${API_URL}/api/blogs/${id}`, {
         method: "DELETE",
       });
 
